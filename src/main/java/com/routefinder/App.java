@@ -1,27 +1,23 @@
 package com.routefinder;
 
+import com.routefinder.ui.MainView;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 /**
  * Entry point for Mountain Route-Finder.
- *
- * For now this just proves the JavaFX pipeline works end to end
- * (Stage -> Scene -> Scene Graph). MainView will replace the
- * placeholder center content once it exists.
+ * Boots the Stage -> Scene -> Scene Graph pipeline with MainView as root.
  */
 public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        BorderPane root = new BorderPane();
-        root.setCenter(new Label("Mountain Route-Finder — setup OK"));
+        MainView mainView = new MainView();
 
-        Scene scene = new Scene(root, 900, 600);
-        primaryStage.setTitle("Mountain Route-Finder");
+        Scene scene = new Scene(mainView, 900, 600);
+        primaryStage.setTitle("Mountain Route-Find" +
+                "er");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
