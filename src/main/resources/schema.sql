@@ -1,0 +1,3 @@
+-- Mountain Route-Finder database schema
+-- Tables: mountains, waypoints, route_segments, named_routes, named_route_segments
+-- To be filled in.

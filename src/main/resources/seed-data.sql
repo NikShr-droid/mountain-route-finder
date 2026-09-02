@@ -1,0 +1,3 @@
+-- Hand-curated mountain/waypoint/route-segment data
+-- for Guru Shikhar, Kilimanjaro, Mont Blanc, Everest, Annapurna.
+-- To be filled in.

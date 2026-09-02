@@ -1,0 +1,13 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# OS
+.DS_Store
+
+# SQLite database file (keep schema.sql + seed-data.sql in version control instead)
+data/*.db
