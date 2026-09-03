@@ -35,6 +35,7 @@ public class DatabaseManager {
             connection = DriverManager.getConnection(DB_URL);
             connection.createStatement().execute("PRAGMA foreign_keys = ON");
             initializeSchemaIfNeeded();
+            seedIfEmpty();
         } catch (SQLException | IOException e) {
             throw new RuntimeException("Failed to initialize database at " + DB_FILE, e);
         }
@@ -73,19 +74,46 @@ public class DatabaseManager {
     }
 
     /**
+     * Loads seed-data.sql if the mountains table is empty. Runs every time
+     * getInstance() is first called in a session, so any code path that
+     * touches the database (App startup, DAOs, tests) is guaranteed real
+     * data to work with -- not just an empty schema.
+     */
+    private void seedIfEmpty() throws SQLException {
+        try (Statement stmt = connection.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM mountains")) {
+            if (rs.next() && rs.getInt(1) > 0) {
+                System.out.println("[DatabaseManager] Mountains table already has data — skipping seed-data.sql");
+                return;
+            }
+        }
+        System.out.println("[DatabaseManager] mountains table empty — running seed-data.sql...");
+        runScript("/seed-data.sql");
+        System.out.println("[DatabaseManager] Seed data loaded.");
+    }
+
+    /**
      * Reads a .sql file off the classpath (src/main/resources) and executes
      * each statement one at a time. JDBC's Statement only runs a single
-     * statement per execute() call, so we split naively on ';' -- this is
-     * safe for schema.sql/seed-data.sql specifically since neither uses
-     * semicolons inside string literals, CHECK constraints, or triggers.
-     * (Verified against this exact schema.sql before shipping.)
+     * statement per execute() call, so we split naively on ';'.
+     *
+     * Full-line '--' comments are stripped first specifically because a
+     * semicolon inside a comment (e.g. "-- do X; then Y") would otherwise
+     * split mid-statement and corrupt the parse -- this happened once
+     * already in seed-data.sql, so it's handled defensively now rather
+     * than trusting every future comment to stay semicolon-free.
      */
     private void runScript(String resourcePath) throws SQLException {
         try (InputStream in = DatabaseManager.class.getResourceAsStream(resourcePath)) {
             if (in == null) {
                 throw new IllegalStateException("Could not find " + resourcePath + " on classpath");
             }
-            String script = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            String rawScript = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            String script = rawScript.lines()
+                    .filter(line -> !line.trim().startsWith("--"))
+                    .reduce((a, b) -> a + "\n" + b)
+                    .orElse("");
+
             try (Statement stmt = connection.createStatement()) {
                 for (String rawStatement : script.split(";")) {
                     String sql = rawStatement.trim();
