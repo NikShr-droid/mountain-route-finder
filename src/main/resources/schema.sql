@@ -7,6 +7,7 @@
 --  - geometry_json stores an ordered list of [lat, lng] points as JSON text,
 --    used to draw the organic Strava-style trail line for a segment.
 --  - safety_score is hand-curated (1 = safest, 5 = most dangerous), not derived.
+--  - mountains.image_file is just a filename inside src/main/resources/images/mountains/
 
 PRAGMA foreign_keys = ON;
 
@@ -18,7 +19,8 @@ CREATE TABLE mountains (
     elevation_m INTEGER NOT NULL,
     difficulty  TEXT    NOT NULL CHECK (difficulty IN ('easy', 'moderate', 'hard', 'extreme')),
     season      TEXT,                       -- e.g. "May-Sep"
-    description TEXT
+    description TEXT,
+    image_file  TEXT                        -- e.g. "kilimanjaro.jpg" (NULL -> placeholder in UI)
 );
 
 -- ---------------------------------------------------------------------------
@@ -46,7 +48,7 @@ CREATE TABLE route_segments (
     elevation_gain_m   INTEGER NOT NULL,
     safety_score       INTEGER NOT NULL CHECK (safety_score BETWEEN 1 AND 5),  -- 1 = safest
     estimated_time_min INTEGER,
-    geometry_json       TEXT   NOT NULL,   -- JSON array of [lat, lng] points, trailhead -> this segment's end
+    geometry_json       TEXT   NOT NULL,   -- JSON array of [lat, lng] points, from_waypoint -> to_waypoint
     CHECK (from_waypoint_id != to_waypoint_id)
 );
 
@@ -78,3 +80,28 @@ CREATE TABLE named_route_segments (
 );
 
 CREATE INDEX idx_nrs_named_route ON named_route_segments(named_route_id);
+
+-- ---------------------------------------------------------------------------
+-- User profiles and personal mountaineering logbook
+CREATE TABLE users (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    username    TEXT    UNIQUE NOT NULL,
+    display_name TEXT   NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ---------------------------------------------------------------------------
+-- Saved, liked, and completed routes logged by users
+CREATE TABLE user_routes (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mountain_id   INTEGER NOT NULL REFERENCES mountains(id) ON DELETE CASCADE,
+    cost_function TEXT    NOT NULL CHECK (cost_function IN ('DISTANCE', 'ELEVATION_GAIN', 'SAFETY')),
+    status        TEXT    NOT NULL CHECK (status IN ('SAVED', 'COMPLETED')),
+    is_liked      INTEGER NOT NULL DEFAULT 0 CHECK (is_liked IN (0, 1)),
+    notes         TEXT,
+    logged_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_user_routes_user     ON user_routes(user_id);
+CREATE INDEX idx_user_routes_mountain ON user_routes(mountain_id);

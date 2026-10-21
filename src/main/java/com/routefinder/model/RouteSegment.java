@@ -19,6 +19,22 @@ public class RouteSegment {
     public RouteSegment(int id, int mountainId, int fromWaypointId, int toWaypointId,
                          double distanceKm, int elevationGainM, int safetyScore,
                          Integer estimatedTimeMin, String geometryJson) {
+        if (fromWaypointId == toWaypointId) {
+            throw new IllegalArgumentException("Self-referencing segment not allowed: fromWaypointId and toWaypointId are both " + fromWaypointId);
+        }
+        if (distanceKm < 0) {
+            throw new IllegalArgumentException("Distance cannot be negative: " + distanceKm);
+        }
+        if (elevationGainM < 0) {
+            throw new IllegalArgumentException("Elevation gain cannot be negative: " + elevationGainM);
+        }
+        if (safetyScore < 1 || safetyScore > 5) {
+            throw new IllegalArgumentException("Safety score must be between 1 and 5 (inclusive), got: " + safetyScore);
+        }
+        if (geometryJson == null) {
+            throw new IllegalArgumentException("geometryJson cannot be null");
+        }
+
         this.id = id;
         this.mountainId = mountainId;
         this.fromWaypointId = fromWaypointId;

@@ -1,5 +1,6 @@
 package com.routefinder.db;
 
+import com.routefinder.exception.DataAccessException;
 import com.routefinder.model.Mountain;
 
 import java.sql.Connection;
@@ -17,6 +18,9 @@ import java.util.List;
  */
 public class MountainDao {
 
+    private static final String COLUMNS =
+            "id, name, region, elevation_m, difficulty, season, description, image_file";
+
     private final Connection connection;
 
     public MountainDao() {
@@ -24,8 +28,7 @@ public class MountainDao {
     }
 
     public List<Mountain> getAllMountains() {
-        String sql = "SELECT id, name, region, elevation_m, difficulty, season, description " +
-                "FROM mountains ORDER BY name";
+        String sql = "SELECT " + COLUMNS + " FROM mountains ORDER BY name";
         List<Mountain> mountains = new ArrayList<>();
         try (Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -33,21 +36,20 @@ public class MountainDao {
                 mountains.add(mapRow(rs));
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to fetch mountains", e);
+            throw new DataAccessException("Failed to fetch mountains", e);
         }
         return mountains;
     }
 
     public Mountain getById(int id) {
-        String sql = "SELECT id, name, region, elevation_m, difficulty, season, description " +
-                "FROM mountains WHERE id = ?";
+        String sql = "SELECT " + COLUMNS + " FROM mountains WHERE id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? mapRow(rs) : null;
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to fetch mountain " + id, e);
+            throw new DataAccessException("Failed to fetch mountain " + id, e);
         }
     }
 
@@ -59,7 +61,8 @@ public class MountainDao {
                 rs.getInt("elevation_m"),
                 rs.getString("difficulty"),
                 rs.getString("season"),
-                rs.getString("description")
+                rs.getString("description"),
+                rs.getString("image_file")   // NULL in the DB -> null here
         );
     }
 }

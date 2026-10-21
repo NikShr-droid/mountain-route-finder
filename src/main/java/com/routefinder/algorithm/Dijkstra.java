@@ -1,30 +1,24 @@
 package com.routefinder.algorithm;
 
+import com.routefinder.exception.RouteNotFoundException;
 import com.routefinder.model.CostFunction;
+import com.routefinder.model.PathResult;
 import com.routefinder.model.RouteSegment;
 
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
 /**
- * Dijkstra's algorithm over a Graph, parameterized by CostFunction.
- * UI-independent -- see DijkstraTest for hardcoded-data verification.
+ * Implementation of Dijkstra's single-source shortest path algorithm over a {@link Graph}.
+ *
+ * <p><b>OOP & Viva Note (Inheritance & Polymorphism):</b>
+ * Extends {@link PathfindingAlgorithm} and overrides {@link #findRoute(Graph, int, int, CostFunction)}.
+ * Solves for non-negative edge weights (distance, elevation gain, and safety score are all $\ge 0$).
+ * When invoked via a base class reference, the JVM dynamically dispatches to this implementation
+ * at runtime.</p>
  */
-public class Dijkstra {
-
-    /** A computed route: the ordered segments walked, and their total cost. */
-    public static class PathResult {
-        public final List<RouteSegment> segments;
-        public final double totalCost;
-
-        public PathResult(List<RouteSegment> segments, double totalCost) {
-            this.segments = segments;
-            this.totalCost = totalCost;
-        }
-    }
+public class Dijkstra extends PathfindingAlgorithm {
 
     private record Entry(int waypointId, double cost) implements Comparable<Entry> {
         @Override
@@ -33,12 +27,14 @@ public class Dijkstra {
         }
     }
 
-    /**
-     * Finds the lowest-cost path from startWaypointId to endWaypointId under
-     * the given cost function. Returns null if no path exists.
-     */
-    public static PathResult findRoute(Graph graph, int startWaypointId, int endWaypointId,
-                                        CostFunction costFunction) {
+    @Override
+    public String getName() {
+        return "Dijkstra's Algorithm";
+    }
+
+    @Override
+    public PathResult findRoute(Graph graph, int startWaypointId, int endWaypointId,
+                                CostFunction costFunction) throws RouteNotFoundException {
         Map<Integer, Double> bestCost = new HashMap<>();
         Map<Integer, RouteSegment> cameFrom = new HashMap<>();
         PriorityQueue<Entry> queue = new PriorityQueue<>();
@@ -49,10 +45,12 @@ public class Dijkstra {
         while (!queue.isEmpty()) {
             Entry current = queue.poll();
 
-            // Stale entry (a shorter path to this node was already found) -- skip it.
+            // Skip stale priority queue entries if a lower-cost path was already settled
             if (current.cost() > bestCost.getOrDefault(current.waypointId(), Double.MAX_VALUE)) {
                 continue;
             }
+
+            // Early exit as soon as the target waypoint is popped from the priority queue
             if (current.waypointId() == endWaypointId) {
                 break;
             }
@@ -60,6 +58,7 @@ public class Dijkstra {
             for (RouteSegment edge : graph.getEdgesFrom(current.waypointId())) {
                 double newCost = current.cost() + costOf(edge, costFunction);
                 int neighbor = edge.getToWaypointId();
+
                 if (newCost < bestCost.getOrDefault(neighbor, Double.MAX_VALUE)) {
                     bestCost.put(neighbor, newCost);
                     cameFrom.put(neighbor, edge);
@@ -68,28 +67,11 @@ public class Dijkstra {
             }
         }
 
+        // Verify that target was reached
         if (startWaypointId != endWaypointId && !cameFrom.containsKey(endWaypointId)) {
-            return null; // unreachable
+            throw new RouteNotFoundException(startWaypointId, endWaypointId);
         }
 
-        // Walk backwards from the end, following cameFrom, to rebuild the path in order.
-        LinkedList<RouteSegment> path = new LinkedList<>();
-        int currentId = endWaypointId;
-        while (currentId != startWaypointId) {
-            RouteSegment edge = cameFrom.get(currentId);
-            path.addFirst(edge);
-            currentId = edge.getFromWaypointId();
-        }
-
-        return new PathResult(path, bestCost.get(endWaypointId));
-    }
-
-    /** Edge weight for a segment under the given cost function. */
-    private static double costOf(RouteSegment segment, CostFunction costFunction) {
-        return switch (costFunction) {
-            case DISTANCE -> segment.getDistanceKm();
-            case ELEVATION_GAIN -> segment.getElevationGainM();
-            case SAFETY -> segment.getSafetyScore();
-        };
+        return reconstructPath(cameFrom, startWaypointId, endWaypointId, bestCost.getOrDefault(endWaypointId, 0.0));
     }
 }

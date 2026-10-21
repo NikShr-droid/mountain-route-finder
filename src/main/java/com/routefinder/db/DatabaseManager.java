@@ -1,5 +1,7 @@
 package com.routefinder.db;
 
+import com.routefinder.exception.DataAccessException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -36,8 +38,9 @@ public class DatabaseManager {
             connection.createStatement().execute("PRAGMA foreign_keys = ON");
             initializeSchemaIfNeeded();
             seedIfEmpty();
+            ensureUserTablesExist();
         } catch (SQLException | IOException e) {
-            throw new RuntimeException("Failed to initialize database at " + DB_FILE, e);
+            throw new DataAccessException("Failed to initialize database at " + DB_FILE, e);
         }
     }
 
@@ -124,6 +127,47 @@ public class DatabaseManager {
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to read " + resourcePath, e);
+        }
+    }
+
+    /**
+     * Ensures the 'users' and 'user_routes' tables exist, and seeds a default
+     * user profile if the users table is empty. Non-destructive for existing databases.
+     */
+    private void ensureUserTablesExist() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username     TEXT    UNIQUE NOT NULL,
+                    display_name TEXT    NOT NULL,
+                    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS user_routes (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    mountain_id   INTEGER NOT NULL REFERENCES mountains(id) ON DELETE CASCADE,
+                    cost_function TEXT    NOT NULL CHECK (cost_function IN ('DISTANCE', 'ELEVATION_GAIN', 'SAFETY')),
+                    status        TEXT    NOT NULL CHECK (status IN ('SAVED', 'COMPLETED')),
+                    is_liked      INTEGER NOT NULL DEFAULT 0 CHECK (is_liked IN (0, 1)),
+                    notes         TEXT,
+                    logged_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """);
+
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_routes_user ON user_routes(user_id)");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_user_routes_mountain ON user_routes(mountain_id)");
+
+            // Seed default profile if empty
+            try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users")) {
+                if (rs.next() && rs.getInt(1) == 0) {
+                    stmt.execute("INSERT INTO users (username, display_name) VALUES ('climber', 'Alpine Explorer')");
+                    System.out.println("[DatabaseManager] Created default user profile: Alpine Explorer");
+                }
+            }
         }
     }
 }

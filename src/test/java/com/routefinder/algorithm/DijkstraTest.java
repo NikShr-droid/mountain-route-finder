@@ -1,6 +1,7 @@
 package com.routefinder.algorithm;
 
 import com.routefinder.model.CostFunction;
+import com.routefinder.model.PathResult;
 import com.routefinder.model.RouteSegment;
 import org.junit.jupiter.api.Test;
 
@@ -8,7 +9,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for Dijkstra using hardcoded graph data (no UI, no DB) so the
@@ -21,37 +22,49 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 public class DijkstraTest {
 
+    private final PathfindingAlgorithm algorithm = new Dijkstra();
+
     @Test
-    void findsShortestPathByDistance() {
+    void findsShortestPathByDistance() throws Exception {
         Graph graph = new Graph(sampleSegments());
 
-        Dijkstra.PathResult result = Dijkstra.findRoute(graph, 1, 4, CostFunction.DISTANCE);
+        PathResult result = algorithm.findRoute(graph, 1, 4, CostFunction.DISTANCE);
 
         assertNotNull(result);
-        assertEquals(4.0, result.totalCost, 0.0001); // 2km + 2km via waypoint 3
-        assertEquals(2, result.segments.size());
-        assertEquals(3, result.segments.get(0).getToWaypointId());
+        assertEquals(4.0, result.getTotalCost(), 0.0001); // 2km + 2km via waypoint 3
+        assertEquals(2, result.getSegments().size());
+        assertEquals(3, result.getSegments().get(0).getToWaypointId());
     }
 
     @Test
-    void findsSaferPathEvenIfLonger() {
+    void findsSaferPathEvenIfLonger() throws Exception {
         Graph graph = new Graph(sampleSegments());
 
-        Dijkstra.PathResult result = Dijkstra.findRoute(graph, 1, 4, CostFunction.SAFETY);
+        PathResult result = algorithm.findRoute(graph, 1, 4, CostFunction.SAFETY);
 
         assertNotNull(result);
-        assertEquals(2.0, result.totalCost, 0.0001); // safety 1 + 1 via waypoint 2
-        assertEquals(2, result.segments.get(0).getToWaypointId());
+        assertEquals(2.0, result.getTotalCost(), 0.0001); // safety 1 + 1 via waypoint 2
+        assertEquals(2, result.getSegments().get(0).getToWaypointId());
     }
 
     @Test
-    void returnsNullWhenNoPathExists() {
+    void throwsRouteNotFoundExceptionWhenNoPathExists() {
         // Only one edge, and it doesn't reach waypoint 4.
         Graph graph = new Graph(List.of(seg(1, 1, 2, 3.0, 300, 2)));
 
-        Dijkstra.PathResult result = Dijkstra.findRoute(graph, 1, 4, CostFunction.DISTANCE);
+        assertThrows(com.routefinder.exception.RouteNotFoundException.class, () ->
+                algorithm.findRoute(graph, 1, 4, CostFunction.DISTANCE));
+    }
 
-        assertNull(result);
+    @Test
+    void overloadedFindRouteDefaultsToDistance() throws Exception {
+        Graph graph = new Graph(sampleSegments());
+
+        // Overloaded 3-argument version (demonstrating method overloading)
+        PathResult result = algorithm.findRoute(graph, 1, 4);
+
+        assertNotNull(result);
+        assertEquals(4.0, result.getTotalCost(), 0.0001);
     }
 
     private List<RouteSegment> sampleSegments() {

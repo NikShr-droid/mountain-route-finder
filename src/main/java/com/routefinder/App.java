@@ -18,7 +18,8 @@ public class App extends Application {
 
         MainView mainView = new MainView();
 
-        Scene scene = new Scene(mainView, 900, 600);
+        Scene scene = new Scene(mainView, 1060, 720);
+        com.routefinder.ui.ThemeManager.applyTheme(scene, com.routefinder.ui.ThemeManager.Theme.LIGHT);
         primaryStage.setTitle("Mountain Route-Finder");
         primaryStage.setScene(scene);
         primaryStage.show();

@@ -1,5 +1,6 @@
 package com.routefinder.db;
 
+import com.routefinder.exception.DataAccessException;
 import com.routefinder.model.RouteSegment;
 
 import java.sql.Connection;
@@ -33,7 +34,7 @@ public class RouteSegmentDao {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to fetch route segments for mountain " + mountainId, e);
+            throw new DataAccessException("Failed to fetch route segments for mountain " + mountainId, e);
         }
         return segments;
     }

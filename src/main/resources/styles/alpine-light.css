@@ -1,0 +1,109 @@
+/* ==========================================================================
+   ALPINE LIGHT THEME ("Alpine Snow & Glacial Ice")
+   Inspired by crystalline summit snow, glacial ice lakes, and sharp granite rock.
+   ========================================================================== */
+
+.root {
+    -fx-bg-primary: #f8fafc;
+    -fx-bg-surface: #ffffff;
+    -fx-bg-surface-hover: #f0f9ff;
+    -fx-sidebar-bg: #0f172a;
+    -fx-sidebar-button-text: #cbd5e1;
+    -fx-sidebar-button-active: #0284c7;
+
+    -fx-text-title: #0f172a;
+    -fx-text-body: #334155;
+    -fx-text-muted: #64748b;
+
+    -fx-ice-accent: #0284c7;
+    -fx-ice-accent-light: #e0f2fe;
+    -fx-ice-glow: rgba(2, 132, 199, 0.15);
+
+    -fx-border-subtle: #e2e8f0;
+    -fx-border-ice: #bae6fd;
+
+    -fx-font-family: "System", "Segoe UI", "SF Pro Display", sans-serif;
+}
+
+/* Base Viewport */
+.viewport-root {
+    -fx-background-color: -fx-bg-primary;
+}
+
+/* Alpine Snow Card */
+.alpine-card {
+    -fx-background-color: -fx-bg-surface;
+    -fx-border-color: -fx-border-subtle;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(three-pass-box, rgba(15, 23, 42, 0.05), 10, 0, 0, 2);
+}
+
+.alpine-card:hover {
+    -fx-border-color: -fx-border-ice;
+    -fx-effect: dropshadow(three-pass-box, -fx-ice-glow, 12, 0, 0, 3);
+}
+
+/* Glacial Primary Button */
+.btn-glacial-primary {
+    -fx-background-color: -fx-ice-accent;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-padding: 7 16;
+}
+
+.btn-glacial-primary:hover {
+    -fx-background-color: #0369a1;
+}
+
+/* Slate Action Button */
+.btn-slate-action {
+    -fx-background-color: #334155;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-cursor: hand;
+    -fx-padding: 7 14;
+}
+
+.btn-slate-action:hover {
+    -fx-background-color: #1e293b;
+}
+
+/* ComboBoxes */
+.combo-box {
+    -fx-background-color: white;
+    -fx-border-color: -fx-border-subtle;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.combo-box:hover {
+    -fx-border-color: -fx-border-ice;
+}
+
+/* ScrollPanes */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* Chart */
+.chart-plot-background {
+    -fx-background-color: #f0f9ff;
+}
+
+.chart-series-area-fill {
+    -fx-fill: linear-gradient(to bottom, rgba(2, 132, 199, 0.4), rgba(2, 132, 199, 0.05));
+}
+
+.chart-series-area-line {
+    -fx-stroke: #0284c7;
+    -fx-stroke-width: 2.5px;
+}
